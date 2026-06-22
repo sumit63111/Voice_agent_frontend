@@ -38,21 +38,31 @@ export function ToolCallDisplay({ calls }: { calls: ToolCallEvent[] }) {
         {calls.map((call, i) => {
           const meta = TOOL_META[call.tool] || { label: call.tool, icon: "⚙️" };
           const style = STATUS_STYLES[call.status] || STATUS_STYLES.running;
+          const badge = STATUS_BADGE[call.status] || call.status;
+          const result =
+            call.status !== "running" && typeof call.message === "string"
+              ? call.message
+              : null;
           return (
             <div
               key={i}
-              className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm transition-all ${style}`}
+              className={`rounded-lg border px-3 py-2 text-sm transition-all ${style}`}
             >
-              <div className="flex items-center gap-2">
-                <span>{meta.icon}</span>
-                <span className="font-medium">{meta.label}</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span>{meta.icon}</span>
+                  <span className="font-medium">{meta.label}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {call.status === "running" && (
+                    <span className="inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  )}
+                  <span className="text-xs opacity-75">{badge}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                {call.status === "running" && (
-                  <span className="inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                )}
-                <span className="text-xs opacity-75">{STATUS_BADGE[call.status]}</span>
-              </div>
+              {result && (
+                <p className="mt-1 text-xs opacity-80 leading-snug">{result}</p>
+              )}
             </div>
           );
         })}
