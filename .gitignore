@@ -1,0 +1,34 @@
+# ── dependencies ──
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+
+# ── next.js build output ──
+/.next/
+/out/
+/build
+*.tsbuildinfo
+next-env.d.ts
+
+# ── secrets / environment ──
+# Ignore every .env file...
+.env
+.env.*
+# ...but DO commit the template
+!.env.example
+
+# ── vercel ──
+.vercel
+
+# ── logs ──
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# ── editor / OS ──
+.DS_Store
+.idea/
+.vscode/*
+*.swp
