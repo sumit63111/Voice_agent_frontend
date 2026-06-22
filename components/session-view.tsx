@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import {
   useVoiceAssistant,
   VoiceAssistantControlBar,
@@ -12,45 +12,48 @@ import type { AppConfig } from "@/app-config";
 import type { ToolCallEvent, CallEndedEvent } from "@/lib/types";
 import { Avatar } from "./avatar";
 import { ToolCallDisplay } from "./tool-call-display";
-import { CallSummary } from "./call-summary";
 import { Transcript } from "./transcript";
+import { ChatInput } from "./chat-input";
 
-export function SessionView({ appConfig }: { appConfig: AppConfig }) {
+export function SessionView({
+  appConfig,
+  onCallEnded,
+}: {
+  appConfig: AppConfig;
+  onCallEnded: (event: CallEndedEvent) => void;
+}) {
   const { audioTrack } = useVoiceAssistant();
   const [toolCalls, setToolCalls] = useState<ToolCallEvent[]>([]);
-  const [callSummary, setCallSummary] = useState<CallEndedEvent | null>(null);
-  const [showSummary, setShowSummary] = useState(false);
 
-  const handleData = useCallback((raw: Uint8Array) => {
-    try {
-      const msg = JSON.parse(new TextDecoder().decode(raw));
-      if (msg.type === "tool_call") {
-        setToolCalls((prev) => {
-          const idx = prev.findLastIndex(
-            (t) => t.tool === msg.tool && t.status === "running"
-          );
-          if (idx !== -1 && msg.status !== "running") {
-            const next = [...prev];
-            next[idx] = msg as ToolCallEvent;
-            return next;
-          }
-          return [...prev, msg as ToolCallEvent];
-        });
-      } else if (msg.type === "call_ended") {
-        setCallSummary(msg as CallEndedEvent);
+  const handleData = useCallback(
+    (raw: Uint8Array) => {
+      try {
+        const msg = JSON.parse(new TextDecoder().decode(raw));
+        if (msg.type === "tool_call") {
+          setToolCalls((prev) => {
+            const idx = prev.findLastIndex(
+              (t) => t.tool === msg.tool && t.status === "running"
+            );
+            if (idx !== -1 && msg.status !== "running") {
+              const next = [...prev];
+              next[idx] = msg as ToolCallEvent;
+              return next;
+            }
+            return [...prev, msg as ToolCallEvent];
+          });
+        } else if (msg.type === "call_ended") {
+          onCallEnded(msg as CallEndedEvent);
+        }
+      } catch {
+        return;
       }
-    } catch {
-      return;
-    }
-  }, []);
+    },
+    [onCallEnded]
+  );
 
   useDataChannel((msg) => {
     if (msg.payload) handleData(msg.payload);
   });
-
-  useEffect(() => {
-    if (callSummary) setShowSummary(true);
-  }, [callSummary]);
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 w-full max-w-5xl mx-auto p-6">
@@ -78,6 +81,7 @@ export function SessionView({ appConfig }: { appConfig: AppConfig }) {
             Conversation
           </p>
           <Transcript />
+          <ChatInput />
         </div>
 
         {toolCalls.length > 0 && (
@@ -86,10 +90,6 @@ export function SessionView({ appConfig }: { appConfig: AppConfig }) {
           </div>
         )}
       </div>
-
-      {showSummary && callSummary && (
-        <CallSummary event={callSummary} onDismiss={() => setShowSummary(false)} />
-      )}
     </div>
   );
 }

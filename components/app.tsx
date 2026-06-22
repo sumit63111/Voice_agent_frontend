@@ -6,18 +6,21 @@ import "@livekit/components-styles";
 import { AnimatePresence, motion } from "motion/react";
 
 import type { AppConfig } from "@/app-config";
-import type { ConnectionDetails } from "@/lib/types";
+import type { ConnectionDetails, CallEndedEvent } from "@/lib/types";
 import { WelcomeView } from "./welcome-view";
 import { SessionView } from "./session-view";
+import { CallSummary } from "./call-summary";
 
 export function App({ appConfig }: { appConfig: AppConfig }) {
   const [connection, setConnection] = useState<ConnectionDetails | null>(null);
+  const [summary, setSummary] = useState<CallEndedEvent | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const onStart = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setSummary(null);
     try {
       const res = await fetch("/api/token", { method: "POST" });
       if (!res.ok) throw new Error(await res.text());
@@ -64,12 +67,16 @@ export function App({ appConfig }: { appConfig: AppConfig }) {
               onDisconnected={() => setConnection(null)}
               className="min-h-screen flex items-center justify-center"
             >
-              <SessionView appConfig={appConfig} />
+              <SessionView appConfig={appConfig} onCallEnded={setSummary} />
               <RoomAudioRenderer />
             </LiveKitRoom>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {summary && (
+        <CallSummary event={summary} onDismiss={() => setSummary(null)} />
+      )}
     </main>
   );
 }
